@@ -182,7 +182,8 @@ class BanditMiddleware(object):
                 response.headers['X-MAB-Debug'] = "STORE; "+';'.join(
                         ['%s:%s' % (key, val) for key, val in request.bandits.items()])
             elif app.extensions['mab'].debug_headers:
-                response.headers['X-MAB-Debug'] = "SAVED; "+';'.join(['%s:%s' % (key, val) for key, val in request.bandits.items()])
+                if requests.bandits:
+                    response.headers['X-MAB-Debug'] = "SAVED; "+';'.join(['%s:%s' % (key, val) for key, val in request.bandits.items()])
             return response
 
         app.add_bandit = types.MethodType(add_bandit, app)
