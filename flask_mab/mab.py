@@ -5,6 +5,6 @@ class Mab(object):
         self.bandits = {}
         self.reward_endpts = []
         self.pull_endpts = []
-        self.debug_headers = app.config.get('MAB_DEBUG_HEADERS', True)
+        self.debug_headers = app.config.get('MAB_DEBUG_HEADERS', False)
         self.cookie_name = app.config.get('MAB_COOKIE_NAME', "MAB")
         self.bandit_storage = None
