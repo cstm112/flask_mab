@@ -26,29 +26,33 @@ except ImportError:
 
 __version__ = "2.0.1"
 
+
 def choose_arm(bandit):
     """Route decorator for registering an impression conveinently
 
     :param bandit: The bandit/experiment to register for
     :type bandit: string
     """
+
     def decorator(func):
-        #runs @ service init
+        # runs @ service init
         if not hasattr(func, 'bandits'):
             func.bandits = []
         func.bandits.append(bandit)
 
         @wraps(func)
         def wrapper(*args, **kwargs):
-            #runs at endpoint hit
+            # runs at endpoint hit
             add_args = []
             for bandit in func.bandits:
-                #Fetch from request first here?
+                # Fetch from request first here?
                 arm_id, arm_value = suggest_arm_for(bandit)
                 add_args.append((bandit, arm_value))
             kwargs.update(add_args)
             return func(*args, **kwargs)
+
         return wrapper
+
     return decorator
 
 
@@ -62,6 +66,7 @@ def reward_endpt(bandit, reward_val=1):
                    give its winning arm
     :type reward: float
     """
+
     def decorator(func):
         if not hasattr(func, 'rewards'):
             func.rewards = []
@@ -73,7 +78,9 @@ def reward_endpt(bandit, reward_val=1):
                 if bandit in request.bandits.keys():
                     request.bandits_reward.add((bandit, request.bandits[bandit], reward_amt))
             return func(*args, **kwargs)
+
         return wrapper
+
     return decorator
 
 
@@ -92,8 +99,8 @@ class BanditMiddleware(object):
 
     def _register_storage(self, app):
         storage_engine = getattr(
-                flask_mab.storage,
-                app.config.get('MAB_STORAGE_ENGINE', 'BanditStorage'))
+            flask_mab.storage,
+            app.config.get('MAB_STORAGE_ENGINE', 'BanditStorage'))
         storage_opts = app.config.get('MAB_STORAGE_OPTS', tuple())
         storage_backend = storage_engine(*storage_opts)
         app.extensions['mab'].bandit_storage = storage_backend
@@ -142,6 +149,7 @@ class BanditMiddleware(object):
         * remember_bandit_arms: Sets the cookie for all requests that pulled an arm
         * send_debug_header: Attaches a header for the MAB to the HTTP response for easier debugging
         """
+
         @app.before_request
         def detect_last_bandits():
             bandits = request.cookies.get(app.extensions['mab'].cookie_name)
@@ -160,35 +168,37 @@ class BanditMiddleware(object):
         @app.after_request
         def remember_bandit_arms(response):
             if request.bandits_save:
-                for bandit_id,arm in request.bandits.items():
-                    #hook event for saving an impression here
-                    if bandit_id in app.extensions['mab'].bandits:
-                      try:
-                          app.extensions['mab'].bandits[bandit_id].pull_arm(arm)
-                      except:
-                          continue
+                for bandit_id, arm in request.bandits.items():
+                    # hook event for saving an impression here
+                    try:
+
+                        if bandit_id in app.extensions['mab'].bandits:
+                            app.extensions['mab'].bandits[bandit_id].pull_arm(arm)
+                    except:
+                        continue
 
             for bandit_id, arm, reward_amt in request.bandits_reward:
                 try:
                     app.extensions['mab'].bandits[bandit_id].reward_arm(arm, reward_amt)
-                    #hook event for saving a reward line here
+                    # hook event for saving a reward line here
                 except KeyError:
                     raise MABConfigException("Bandit %s not found" % bandit_id)
 
             response.set_cookie(
-                    app.extensions['mab'].cookie_name,
-                    json.dumps(request.bandits))
+                app.extensions['mab'].cookie_name,
+                json.dumps(request.bandits))
             return response
 
         @app.after_request
         def send_debug_header(response):
             if app.extensions['mab'].debug_headers and request.bandits_save:
-                response.headers['X-MAB-Debug'] = "STORE; "+';'.join(
-                        ['%s:%s' % (key, val) for key, val in request.bandits.items()])
+                response.headers['X-MAB-Debug'] = "STORE; " + ';'.join(
+                    ['%s:%s' % (key, val) for key, val in request.bandits.items()])
             elif app.extensions['mab'].debug_headers:
-                if  hasattr(request, 'bandits'):
-                   if request.bandits:
-                    response.headers['X-MAB-Debug'] = "SAVED; "+';'.join(['%s:%s' % (key, val) for key, val in request.bandits.items()])
+                if hasattr(request, 'bandits'):
+                    if request.bandits:
+                        response.headers['X-MAB-Debug'] = "SAVED; " + ';'.join(
+                            ['%s:%s' % (key, val) for key, val in request.bandits.items()])
             return response
 
         app.add_bandit = types.MethodType(add_bandit, app)
@@ -221,11 +231,11 @@ def suggest_arm_for(key):
     """
     app = current_app
     try:
-        #Try to get the selected bandits from cookie
+        # Try to get the selected bandits from cookie
         arm = app.extensions['mab'].bandits[key][request.bandits[key]]
         return arm["id"], arm["value"]
     except (AttributeError, TypeError, KeyError) as err:
-        #Assign an arm for a new client
+        # Assign an arm for a new client
         try:
             arm = app.extensions['mab'].bandits[key].suggest_arm()
             request.bandits[key] = arm["id"]
@@ -233,6 +243,7 @@ def suggest_arm_for(key):
             return arm["id"], arm["value"]
         except KeyError:
             raise MABConfigException("Bandit %s not found" % key)
+
 
 class MABConfigException(Exception):
     """Raised when internal state in MAB setup is invalid"""
