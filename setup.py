@@ -9,7 +9,7 @@ from setuptools import setup
 
 setup(
     name='Flask-MAB',
-    version='2.0.3',
+    version='2.0.4',
     url='https://github.com/cstm112/flask_mab.git',
     license='BSD',
     author='Mark Grey',

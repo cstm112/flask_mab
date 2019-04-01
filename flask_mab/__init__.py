@@ -162,7 +162,8 @@ class BanditMiddleware(object):
             if request.bandits_save:
                 for bandit_id,arm in request.bandits.items():
                     #hook event for saving an impression here
-                    app.extensions['mab'].bandits[bandit_id].pull_arm(arm)
+                    if bandit_id in app.extensions['mab'].bandits:
+                      app.extensions['mab'].bandits[bandit_id].pull_arm(arm)
 
             for bandit_id, arm, reward_amt in request.bandits_reward:
                 try:
