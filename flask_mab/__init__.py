@@ -184,7 +184,8 @@ class BanditMiddleware(object):
                 except KeyError:
                     raise MABConfigException("Bandit %s not found" % bandit_id)
 
-            response.set_cookie(
+            if hasattr(request, "bandits"):
+             response.set_cookie(
                 app.extensions['mab'].cookie_name,
                 json.dumps(request.bandits))
             return response
