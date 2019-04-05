@@ -198,7 +198,7 @@ class BanditMiddleware(object):
 
                 response.set_cookie(
 
-                    app.extensions['mab'].cookie_name, json.dumps({"bc": cipher.encrypt(json.dumps(request.bandits))}))
+                    app.extensions['mab'].cookie_name, json.dumps({"bc": cipher.encrypt(str.encode(json.dumps(request.bandits)))}))
             return response
 
         @app.after_request
