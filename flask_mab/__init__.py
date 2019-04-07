@@ -24,9 +24,7 @@ try:
 except ImportError:
     from flask import _request_ctx_stack as stack
 
-__version__ = "2.0.6"
-
-from cryptography.fernet import Fernet
+__version__ = "2.0.1"
 
 
 def choose_arm(bandit):
@@ -116,7 +114,6 @@ class BanditMiddleware(object):
         app.config.setdefault('MAB_COOKIE_PATH', '/')
         app.config.setdefault('MAB_COOKIE_TTL', None)
         app.config.setdefault('MAB_DEBUG_HEADERS', True)
-        app.config.setdefault('MAB_SECRET_KEY', b'APM1JDVgT8WDGOWBgQv6EIhvxl4vDYvUnVdg-Vjdt0o=')
         if not hasattr(app, 'extensions'):
             app.extensions = {}
         app.extensions['mab'] = Mab(app)
@@ -130,7 +127,7 @@ class BanditMiddleware(object):
         app.extensions['mab'].reward_endpts = []
         app.extensions['mab'].pull_endpts = []
 
-        app.extensions['mab'].debug_headers = app.config.get('MAB_DEBUG_HEADERS', False)
+        app.extensions['mab'].debug_headers = app.config.get('MAB_DEBUG_HEADERS', True)
         app.extensions['mab'].cookie_name = app.config.get('MAB_COOKIE_NAME', "MAB")
         self._init_detection(app)
 
@@ -159,13 +156,7 @@ class BanditMiddleware(object):
             request.bandits_save = False
             request.bandits_reward = set()
             if bandits:
-                bandit_wrapper = json.loads(bandits)
-                if "bc" in bandit_wrapper:
-                    cipher = Fernet(app.config.get("MAB_SECRET_KEY"))
-                    request.bandits = json.loads(cipher.decrypt(bandit_wrapper["bc"]))
-
-                else:
-                    request.bandits = json.loads(bandits)
+                request.bandits = json.loads(bandits)
             else:
                 request.bandits = {}
 
@@ -194,11 +185,9 @@ class BanditMiddleware(object):
                     raise MABConfigException("Bandit %s not found" % bandit_id)
 
             if hasattr(request, "bandits"):
-                cipher = Fernet(app.config.get("MAB_SECRET_KEY"))
-
-                response.set_cookie(
-
-                    app.extensions['mab'].cookie_name, json.dumps({"bc": cipher.encrypt(str.encode(json.dumps(request.bandits)))}))
+             response.set_cookie(
+                app.extensions['mab'].cookie_name,
+                json.dumps(request.bandits))
             return response
 
         @app.after_request
