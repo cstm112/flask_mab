@@ -156,7 +156,10 @@ class BanditMiddleware(object):
             request.bandits_save = False
             request.bandits_reward = set()
             if bandits:
-                request.bandits = json.loads(bandits)
+                try:
+                    request.bandits = json.loads(bandits)
+                except:
+                    request.bandits={}
             else:
                 request.bandits = {}
 
