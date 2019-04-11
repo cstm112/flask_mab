@@ -9,6 +9,7 @@
 
     :license: BSD, see LICENSE for more details.
 """
+from json import JSONDecodeError
 
 from flask import current_app, g, request
 import json
@@ -158,7 +159,7 @@ class BanditMiddleware(object):
             if bandits:
                 try:
                     request.bandits = json.loads(bandits)
-                except:
+                except JSONDecodeError as e:
                     request.bandits={}
             else:
                 request.bandits = {}
